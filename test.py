@@ -38,6 +38,13 @@ class NodeFactory(object):
         self.btc = btc
         self.btcd = btcd
 
+    def netstat(self):
+        proc = subprocess.run(['netstat'.format(os.getcwd()), '-antup'], \
+            stdout=subprocess.PIPE)
+        logpath = 'netstat-{}.log'.format(str(time.time()))
+        with open(logpath, 'w') as f:
+            f.write(proc.stdout.decode("UTF-8"))
+
     def get_node(self, implementation):
         node_id = self.next_id
         self.next_id += 1
@@ -51,6 +58,7 @@ class NodeFactory(object):
         self.nodes.append(node)
 
         node.btcd = self.btcd
+        self.netstat()
         node.daemon.start()
         return node
 
@@ -70,16 +78,9 @@ def transact_and_mine(btc):
             txid = btc.rpc.sendtoaddress(addr, 0.5)
         btc.rpc.generate(1)
 
-def netstat():
-    proc = subprocess.run(['netstat'.format(os.getcwd()), '-antup'], \
-        stdout=subprocess.PIPE)
-    logpath = 'netstat-{}.log'.format(str(int(time.time())))
-    with open(logpath, 'w') as f:
-        f.write(proc.stdout.decode("UTF-8"))
-
 @pytest.fixture()
 def bitcoind():
-    netstat()
+    #netstat()
     btc = BitcoinD(bitcoin_dir=os.path.join(TEST_DIR, "bitcoind"), rpcport=28332)
     btc.start()
     bch_info = btc.rpc.getblockchaininfo()
