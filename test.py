@@ -16,6 +16,7 @@ import pytest
 import sys
 import tempfile
 import time
+import subprocess
 
 TEST_DIR = tempfile.mkdtemp(prefix='lightning-')
 TEST_DEBUG = os.getenv("TEST_DEBUG", "0") == "1"
@@ -69,8 +70,16 @@ def transact_and_mine(btc):
             txid = btc.rpc.sendtoaddress(addr, 0.5)
         btc.rpc.generate(1)
 
+def netstat():
+    proc = subprocess.run(['netstat'.format(os.getcwd()), '-antup'], \
+        stdout=subprocess.PIPE)
+    logpath = 'netstat-{}.log'.format(str(int(time.time())))
+    with open(logpath, 'w') as f:
+        f.write(proc.stdout.decode("UTF-8"))
+
 @pytest.fixture()
 def bitcoind():
+    netstat()
     btc = BitcoinD(bitcoin_dir=os.path.join(TEST_DIR, "bitcoind"), rpcport=28332)
     btc.start()
     bch_info = btc.rpc.getblockchaininfo()
